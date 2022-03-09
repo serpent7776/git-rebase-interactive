@@ -35,7 +35,7 @@ inline std::tuple<bool, std::string_view, std::string_view> split(char sep, std:
 	{
 		return {false, {}, {}};
 	}
-	return std::tuple(true, std::string_view(first, middle), std::string_view(middle + 1, last));
+	return std::tuple(true, std::string_view(first, middle - first), std::string_view(middle + 1, last - (middle + 1)));
 }
 
 inline std::optional<int> atoi(std::string_view s)

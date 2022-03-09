@@ -1,4 +1,4 @@
-CXXFLAGS += -std=c++20 -O2 -Wall -Wextra -pedantic
+CXXFLAGS += -std=c++17 -O2 -Wall -Wextra -pedantic
 
 run_tests: test
 	./test
