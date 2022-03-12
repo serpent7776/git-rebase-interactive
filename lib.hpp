@@ -5,6 +5,8 @@
 #include <string_view>
 #include <utility>
 #include <tuple>
+#include <optional>
+#include <numeric>
 
 namespace str
 {
@@ -34,6 +36,25 @@ inline std::tuple<bool, std::string_view, std::string_view> split(char sep, std:
 		return {false, {}, {}};
 	}
 	return std::tuple(true, std::string_view(first, middle), std::string_view(middle + 1, last));
+}
+
+inline std::optional<int> atoi(std::string_view s)
+{
+	int sign = 1;
+	auto it = std::begin(s);
+	if (*it == '-')
+	{
+		sign = -1;
+		++it;
+	}
+	const auto e = s.find_first_not_of("0123456789", std::distance(std::begin(s), it));
+	if (e != std::string_view::npos)
+	{
+		return std::nullopt;
+	}
+	return sign * std::accumulate(it, std::end(s), 0, [](int r, char c){
+		return 10*r + (c - '0');
+	});
 }
 
 }
