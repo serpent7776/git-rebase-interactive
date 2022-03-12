@@ -61,3 +61,22 @@ TEST_CASE("split an empty string")
 	REQUIRE(left == "");
 	REQUIRE(right == "");
 }
+
+TEST_CASE("atoi positive cases")
+{
+	REQUIRE(str::atoi("0") == 0);
+	REQUIRE(str::atoi("1") == 1);
+	REQUIRE(str::atoi("12") == 12);
+	REQUIRE(str::atoi("123") == 123);
+	REQUIRE(str::atoi("-999") == -999);
+	REQUIRE(str::atoi("-0") == 0);
+}
+
+TEST_CASE("atoi fails if nondigit is found")
+{
+	REQUIRE(str::atoi("1a") == std::nullopt);
+	REQUIRE(str::atoi("x") == std::nullopt);
+	REQUIRE(str::atoi("-1x") == std::nullopt);
+	REQUIRE(str::atoi("-y") == std::nullopt);
+	REQUIRE(str::atoi("_999") == std::nullopt);
+}
