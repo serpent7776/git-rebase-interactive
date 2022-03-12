@@ -80,3 +80,10 @@ TEST_CASE("atoi fails if nondigit is found")
 	REQUIRE(str::atoi("-y") == std::nullopt);
 	REQUIRE(str::atoi("_999") == std::nullopt);
 }
+
+TEST_CASE("atoi fails for empty string")
+{
+	REQUIRE(str::atoi("") == std::nullopt);
+	REQUIRE(str::atoi(" ") == std::nullopt);
+	REQUIRE(str::atoi("  ") == std::nullopt);
+}
