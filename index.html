@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>git rebase --interactive</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @comment url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'DejaVu Sans'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      h1 {margin: 0.5em 0;}
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .q {display: inline-block; width: 25%;}
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# git rebase --interactive
+
+---
+
+# rebase
+Reapply local commits on top of other branch. Sometimes referred to as history rewriting/editing, but it doesn't really edit commits, it creates a new fork in the history.
+
+```
+                     A---B---C  topic
+                    /
+               D---E---F---G  master
+```
+```sh
+git rebase master
+```
+```
+                     A---B---C
+                    /
+               D---E---F---G  master
+                            \
+                             A'--B'--C'  topic
+```
+
+---
+
+# rebase --interactive
+
+`rebase` always reapplies commits as they are. `rebase --interactive` lets you customise what is to be done.
+
+Some possible commands:
+  - fixup commits
+  - change commit message
+  - remove commit
+  - reorder commits
+  - execute an external command
+  - split commits
+
+---
+
+# commit --amend
+
+Similar functionality to `rebase --interactive`, but affect only most recent commit.
+
+  - change commit message
+  - change commit author
+  - add more changes
+  - remove some changes
+
+---
+
+# Try it for yourself
+
+This repo contains a simple library prepared in a way so you can try rebase in a safe way.
+```sh
+git clone https://github.com/serpent7776/git-rebase-interactive
+```
+```sh
+git checkout exercises
+```
+At any point you can go back to the initial repo state by doing
+```sh
+git reset --hard initial
+```
+
+---
+
+# Change commit message
+
+`reword` command can be used to change commit message.
+
+```sh
+git rebase --interactive origin/master
+```
+
+```sh
+pick 302d24d Change me
+```
+Change to
+```sh
+reword 302d24d Change me
+```
+
+Editor will be launched so that commit message can be changed.  
+You can change the messege here to, e.g. "Updated catch2 to v2.13.8"
+
+---
+
+# Remove commits
+
+`drop` command allows you to remove a commit that's not needed.
+
+```sh
+git rebase --interactive origin/master
+```
+
+```txt
+pick 2af9f29 Unneeded commit
+```
+
+Change to
+
+```txt
+drop 2af9f29 Unneeded commit
+```
+
+---
+
+# Reorder commits
+
+During rebase you can freely change the order of commits.
+
+```sh
+git rebase --interactive origin/master
+```
+
+```sh
+pick d708f32 Added tests for split function
+pick 638c919 Added split function
+```
+
+Change to
+
+```sh
+pick 638c919 Added split function
+pick d708f32 Added tests for split function
+```
+
+---
+
+# Fixup commits
+
+`fixup` command can be used to add fixes to already made commits.
+
+There's test case failing, you can fix it by adding
+```cpp
+	if (s.empty())
+	{
+		return std::nullopt;
+	}
+```
+to `atoi` function and then:
+```sh
+git add lib.hpp  # add changes to commit
+git commit --fixup=hash_of_commit_to_fix  # create a fixup commit
+git rebase --interactive --autosquash origin/master  # auto merge fixup commit
+```
+Note the `--autosquash` option. It's required to auto apply fixup commits.  
+The original commit will be altered.
+
+---
+
+# Execute an external command
+
+You can instruct git to run arbitrary command while rebasing. This can be useful for running tests while rebasing.
+
+```sh
+git rebase --interactive origin/master
+```
+
+Add this line at any place to run tests while rebasing:
+```
+exec make run_tests
+```
+If tests fail, rebase will be interrupted.
+Fix the errors and run
+
+```sh
+git rebase --continue
+```
+
+---
+
+# Split commit
+
+Rebase can be used to split big commits into a number of smaller ones.
+
+```sh
+git rebase --interactive origin/master
+```
+.q[change this line] `pick 602fcf5 Initial commit`
+
+.q[to this] `edit 602fcf5 Initial commit`
+```sh
+git reset HEAD~  # reset to previous commit
+```
+```sh
+git add lib.hpp
+git commit -m 'Added join function'  # create 1st commit
+```
+```sh
+git add tests.cpp tests_main.cpp lib/catch.hpp
+git commit -m 'Added tests for join'  # create 2st commit
+```
+```sh
+git add Makefile
+git commit -m 'Added Makefile'  # create 3st commit
+```
+```sh
+git rebase --continue
+```
+
+---
+
+# Change commit author
+
+First, change your user data globally (or locally via `--local`)
+```sh
+git config --global user.name "you name"
+git config --global user.email you@domain.com
+```
+
+To change author of most recent commit:
+```sh
+git commit --amend --reset-author --no-edit
+```
+
+For a range of commits:
+```sh
+git rebase --exec 'git commit --amend --reset-author --no-edit' origin/master
+```
+
+---
+
+# Push after rebase
+
+After any rebase, `git push` will fail. That's because it's no longer a fast-forward change (commit history has been rewritten).
+
+```
+                     A---B---C  origin/topic
+                    /
+               D---E---F---G  master
+                            \
+                             A'--B'--C'  topic
+```
+
+To push rewritten history to a remote `git push --force-with-lease` needs to be used.
+
+There's also `git push --force-with-lease --force-if-includes` for some more security.
+
+More detailed description of the possible issue with --force-with-lease:
+https://stackoverflow.com/a/65839129
+
+A simple git alias can help:
+```sh
+git config --global alias.push-f 'push --force-with-lease --force-if-includes'
+```
+`git push-f` is now the same as `git push --force-with-lease --force-if-includes`.
+
+---
+
+# Pulling rebased branch
+
+You should not need this.
+
+After pushing rebased branch to the remote, `git pull` no longer works on other machines, that are still on the older version of the branch.
+
+```
+fatal: refusing to merge unrelated histories
+```
+
+Instead either:
+
+```sh
+git pull --rebase
+```
+
+or:
+
+```sh
+git fetch
+git reset --hard origin/your_branch
+```
+
+This one will remove all local changes not present in the remote (even the committed ones).
+
+---
+
+# Final thoughts
+
+- `rebase --interactive` can be very useful to clean up development branch
+- don't rewrite history once review has started
+- don't rebase shared branches
+- don't rebase on another branch and rewrite history at the same time
+- keep your development branch small
+- keep your commits small
+- rebase conflicts can get tricky
+- consider doing `git push` before rebasing
+- when in doubt, ask someone for help
+- every team has their own workflow, some of above points might not apply
+
+---
+
+class: center, middle
+
+# There's more
+
+```sh
+man git
+```
+
+```sh
+git help rebase
+```
+
+https://www.git-scm.com/book/
+
+https://www.git-scm.com/docs/gitfaq
+
+---
+
+class: center, middle
+
+# Thank you
+
+## Questions?
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
